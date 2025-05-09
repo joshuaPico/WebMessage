@@ -14,7 +14,7 @@ function getLocalIpAddress() {
   return '127.0.0.1'; // Fallback to localhost if no external IP is found
 }
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const wss = new WebSocket.Server({ port: PORT });
 const clients = new Set();
 
