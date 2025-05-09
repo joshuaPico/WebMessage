@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Client</title>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <div>
+        <input type="text" id="nameInput" placeholder="Enter your name..." style="margin-bottom: 10px;">
+    </div>
+    <div>
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <div id="messages" style="margin-top: 20px;">
+        <h3>Messages:</h3>
+        <ul id="messageList"></ul>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const messageList = document.getElementById('messageList');
+        
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            appendMessage('System', 'Connected to server');
+        };
+
+        ws.onmessage = async (event) => {
+            let messageData;
+            if (event.data instanceof Blob) {
+                messageData = JSON.parse(await event.data.text());
+            } else {
+                messageData = JSON.parse(event.data);
+            }
+            console.log('Received:', messageData);
+            appendMessage(messageData.sender, messageData.message);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            appendMessage('System', 'Error: ' + error);
+        };
+
+        ws.onclose = () => {
+            console.log('Disconnected from WebSocket server');
+            appendMessage('System', 'Disconnected from server');
+        };
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const nameInput = document.getElementById('nameInput');
+            const message = messageInput.value;
+            const sender = nameInput.value || 'Anonymous';
+            
+            if (message && ws.readyState === WebSocket.OPEN) {
+                const messageData = {
+                    sender: sender,
+                    message: message
+                };
+                ws.send(JSON.stringify(messageData));
+                appendMessage(sender, message);  // Fixed: Now passing both sender and message
+                messageInput.value = ''; // Clear input after sending
+            }
+        }
+
+        function appendMessage(sender, message) {  // Function expects two parameters
+            const li = document.createElement('li');
+            li.textContent = `${sender}: ${message}`;  // Format the message with sender and content
+            messageList.appendChild(li);
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
